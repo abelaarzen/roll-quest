@@ -4,272 +4,447 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sidequest Wizard</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0a12;
-    --card-bg: #12121f;
-    --gold: #d4a843;
-    --gold-dim: #a07830;
-    --purple: #6b3fa0;
-    --purple-glow: #9b6fd0;
-    --text: #e8e0d0;
-    --text-dim: #8a8078;
-    --star: #ffe8a0;
-  }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Crimson Pro', Georgia, serif;
+    background-color: #008080;
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    font-family: 'Comic Sans MS', 'Comic Sans', cursive;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-    position: relative;
+    padding: 16px;
   }
 
-  /* Stars background */
-  .stars {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
+  /* Classic Windows window chrome */
+  .window {
+    background: #c0c0c0;
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #404040;
+    border-bottom: 2px solid #404040;
+    width: 100%;
+    max-width: 560px;
+    box-shadow: 2px 2px 0 #000000;
   }
 
-  .star {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: var(--star);
-    border-radius: 50%;
-    animation: twinkle var(--dur) ease-in-out infinite alternate;
+  .title-bar {
+    background: linear-gradient(to right, #000080, #1084d0);
+    color: white;
+    font-weight: bold;
+    font-size: 0.85rem;
+    padding: 3px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
   }
 
-  @keyframes twinkle {
-    from { opacity: 0.15; }
-    to { opacity: 0.9; }
+  .title-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  /* Main container */
-  .container {
-    position: relative;
-    z-index: 1;
+  .title-bar-icon {
+    font-size: 1rem;
+  }
+
+  .title-bar-buttons {
+    display: flex;
+    gap: 2px;
+  }
+
+  .tb-btn {
+    background: #c0c0c0;
+    border-top: 1px solid #ffffff;
+    border-left: 1px solid #ffffff;
+    border-right: 1px solid #404040;
+    border-bottom: 1px solid #404040;
+    width: 16px;
+    height: 14px;
+    font-size: 0.6rem;
+    line-height: 1;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    font-family: 'Comic Sans MS', cursive;
+    font-weight: bold;
+  }
+
+  .menu-bar {
+    background: #c0c0c0;
+    padding: 2px 4px;
+    font-size: 0.8rem;
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #808080;
+  }
+
+  .menu-item {
+    padding: 1px 6px;
+    cursor: default;
+    color: #000;
+  }
+
+  .menu-item:hover {
+    background: #000080;
+    color: #fff;
+  }
+
+  /* Toolbar */
+  .toolbar {
+    background: #c0c0c0;
+    padding: 4px 6px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    border-bottom: 1px solid #808080;
+    flex-wrap: wrap;
+  }
+
+  .tool-btn {
+    background: #c0c0c0;
+    border-top: 1px solid #ffffff;
+    border-left: 1px solid #ffffff;
+    border-right: 1px solid #404040;
+    border-bottom: 1px solid #404040;
+    width: 24px;
+    height: 24px;
+    font-size: 0.85rem;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tool-sep {
+    width: 1px;
+    height: 20px;
+    background: #808080;
+    margin: 0 2px;
+  }
+
+  /* Canvas area */
+  .canvas-area {
+    background: #c0c0c0;
+    padding: 8px;
+  }
+
+  .paint-canvas {
+    background: white;
+    border-top: 2px solid #808080;
+    border-left: 2px solid #808080;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2rem;
-    padding: 2rem;
-    max-width: 520px;
-    width: 100%;
+    gap: 14px;
   }
 
-  /* Wizard icon */
+  /* Wizard image */
   .wizard-wrap {
     position: relative;
     cursor: default;
+    display: inline-block;
   }
 
   .wizard-img {
-    width: 220px;
+    width: 100%;
+    max-width: 480px;
     height: auto;
     image-rendering: pixelated;
-    filter: drop-shadow(0 0 30px rgba(107, 63, 160, 0.4));
-    transition: filter 0.4s, transform 0.3s;
+    border-top: 2px solid #808080;
+    border-left: 2px solid #808080;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    display: block;
   }
 
-  .wizard-wrap:hover .wizard-img {
-    filter: drop-shadow(0 0 50px rgba(155, 111, 208, 0.6));
-    transform: scale(1.05);
-  }
-
-  .wizard-glow {
-    position: absolute;
-    inset: -30px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(107,63,160,0.15) 0%, transparent 70%);
-    pointer-events: none;
+  .wizard-wrap:active .wizard-img {
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #808080;
+    border-bottom: 2px solid #808080;
   }
 
   /* Title */
   h1 {
-    font-family: 'Cinzel Decorative', serif;
-    font-weight: 900;
-    font-size: clamp(1.6rem, 5vw, 2.4rem);
-    background: linear-gradient(135deg, var(--gold), var(--star), var(--gold-dim));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: clamp(1.3rem, 5vw, 1.9rem);
+    font-weight: bold;
+    color: #000080;
     text-align: center;
-    letter-spacing: 0.04em;
+    text-shadow: 2px 2px 0 #c0c0c0, 3px 3px 0 #808080;
+    letter-spacing: 1px;
   }
 
   .subtitle {
-    font-size: 1.05rem;
-    color: var(--text-dim);
-    font-style: italic;
-    font-weight: 300;
+    font-size: 0.9rem;
+    color: #800080;
     text-align: center;
-    margin-top: -0.8rem;
+    margin-top: -8px;
   }
 
   /* The quest button */
   .quest-btn {
-    position: relative;
-    font-family: 'Cinzel Decorative', serif;
-    font-weight: 700;
+    font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+    font-weight: bold;
     font-size: 1rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--bg);
-    background: linear-gradient(135deg, var(--gold), var(--star));
-    border: none;
-    padding: 1rem 2.6rem;
-    border-radius: 60px;
+    color: #000000;
+    background: #c0c0c0;
+    border-top: 2px solid #ffffff;
+    border-left: 2px solid #ffffff;
+    border-right: 2px solid #404040;
+    border-bottom: 2px solid #404040;
+    padding: 6px 20px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 25px rgba(212, 168, 67, 0.3), inset 0 1px 0 rgba(255,255,255,0.3);
-    overflow: hidden;
-  }
-
-  .quest-btn::before {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border-radius: 62px;
-    background: linear-gradient(135deg, var(--gold), var(--purple-glow), var(--gold));
-    z-index: -1;
-    opacity: 0;
-    transition: opacity 0.3s;
+    letter-spacing: 0.5px;
+    box-shadow: 1px 1px 0 #000;
   }
 
   .quest-btn:hover {
-    transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 8px 40px rgba(212, 168, 67, 0.45), inset 0 1px 0 rgba(255,255,255,0.4);
+    background: #d0d0d0;
   }
 
-  .quest-btn:hover::before { opacity: 1; }
-
   .quest-btn:active {
-    transform: translateY(0) scale(0.98);
+    border-top: 2px solid #404040;
+    border-left: 2px solid #404040;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    box-shadow: none;
+    padding: 7px 19px 5px 21px;
   }
 
   /* Quest card */
   .quest-card {
-    background: var(--card-bg);
-    border: 1px solid rgba(212, 168, 67, 0.15);
-    border-radius: 16px;
-    padding: 2rem 2.2rem;
     width: 100%;
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,67,0.08);
-    text-align: center;
-    pointer-events: none;
+    background: white;
+    border-top: 2px solid #808080;
+    border-left: 2px solid #808080;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    padding: 14px 16px;
+    display: none;
+    text-align: left;
+    position: relative;
   }
 
   .quest-card.visible {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
+    display: block;
   }
 
   .quest-category {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #ffffff;
+    background: #000080;
+    padding: 1px 6px;
+    display: inline-block;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
     text-transform: uppercase;
-    color: var(--purple-glow);
-    margin-bottom: 0.8rem;
   }
 
   .quest-text {
-    font-size: 1.35rem;
-    line-height: 1.6;
-    font-weight: 300;
-    color: var(--text);
+    font-size: 1.05rem;
+    line-height: 1.5;
+    color: #000000;
+    margin-bottom: 10px;
   }
 
   .quest-difficulty {
-    margin-top: 1.2rem;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    color: var(--text-dim);
-    font-size: 0.85rem;
+    gap: 3px;
+    font-size: 0.8rem;
+    color: #808080;
   }
 
   .quest-difficulty .pip {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--gold-dim);
-    opacity: 0.3;
+    width: 12px;
+    height: 12px;
+    background: #c0c0c0;
+    border-top: 1px solid #808080;
+    border-left: 1px solid #808080;
+    border-right: 1px solid #ffffff;
+    border-bottom: 1px solid #ffffff;
   }
 
   .quest-difficulty .pip.active {
-    opacity: 1;
-    background: var(--gold);
-    box-shadow: 0 0 6px rgba(212, 168, 67, 0.5);
+    background: #ff0000;
+    border-top: 1px solid #ff8080;
+    border-left: 1px solid #ff8080;
+    border-right: 1px solid #800000;
+    border-bottom: 1px solid #800000;
   }
 
-  /* Sparkle burst animation */
-  .sparkle {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    background: var(--star);
-    border-radius: 50%;
-    pointer-events: none;
-    animation: sparkle-fly 0.7s ease-out forwards;
+  /* MS Paint color palette */
+  .palette-bar {
+    background: #c0c0c0;
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border-top: 1px solid #808080;
+    flex-wrap: wrap;
   }
 
-  @keyframes sparkle-fly {
-    0% { opacity: 1; transform: translate(0, 0) scale(1); }
-    100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+  .palette-swatch {
+    width: 14px;
+    height: 14px;
+    border-top: 1px solid #808080;
+    border-left: 1px solid #808080;
+    border-right: 1px solid #ffffff;
+    border-bottom: 1px solid #ffffff;
+    cursor: default;
+    flex-shrink: 0;
   }
 
-  .footer {
+  /* Status bar */
+  .status-bar {
+    background: #c0c0c0;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    color: #000;
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid #808080;
+  }
+
+  .status-panel {
+    border-top: 1px solid #808080;
+    border-left: 1px solid #808080;
+    border-right: 1px solid #ffffff;
+    border-bottom: 1px solid #ffffff;
+    padding: 1px 6px;
+  }
+
+  /* Pixel sparkle */
+  .px-spark {
     position: fixed;
-    bottom: 1.2rem;
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    opacity: 0.5;
-    letter-spacing: 0.05em;
+    width: 4px;
+    height: 4px;
+    pointer-events: none;
+    image-rendering: pixelated;
+    animation: px-fly 0.6s steps(6) forwards;
+    z-index: 9999;
+  }
+
+  @keyframes px-fly {
+    0%   { opacity: 1; transform: translate(0,0); }
+    100% { opacity: 0; transform: translate(var(--tx), var(--ty)); }
   }
 </style>
 </head>
 <body>
 
-<div class="stars" id="stars"></div>
+<div class="window">
 
-<div class="container">
-  <div class="wizard-wrap" id="wizardWrap">
-    <div class="wizard-glow"></div>
-    <img class="wizard-img" src="wizard.jpg" alt="The Sidequest Wizard" />
+  <!-- Title bar -->
+  <div class="title-bar">
+    <div class="title-bar-left">
+      <span class="title-bar-icon">🧙</span>
+      <span>Sidequest Wizard - Paint</span>
+    </div>
+    <div class="title-bar-buttons">
+      <div class="tb-btn">_</div>
+      <div class="tb-btn">□</div>
+      <div class="tb-btn">✕</div>
+    </div>
   </div>
 
-  <h1>Sidequest Wizard</h1>
-  <p class="subtitle">Every day holds a hidden quest</p>
-
-  <button class="quest-btn" id="questBtn" onclick="rollQuest()">
-    ✦ Reveal My Sidequest ✦
-  </button>
-
-  <div class="quest-card" id="questCard">
-    <div class="quest-category" id="questCat"></div>
-    <div class="quest-text" id="questText"></div>
-    <div class="quest-difficulty" id="questDiff"></div>
+  <!-- Menu bar -->
+  <div class="menu-bar">
+    <span class="menu-item">File</span>
+    <span class="menu-item">Edit</span>
+    <span class="menu-item">View</span>
+    <span class="menu-item">Quest</span>
+    <span class="menu-item">Help</span>
   </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="tool-btn" title="Select">⬚</div>
+    <div class="tool-btn" title="Pencil">✏️</div>
+    <div class="tool-btn" title="Fill">🪣</div>
+    <div class="tool-btn" title="Text">A</div>
+    <div class="tool-sep"></div>
+    <div class="tool-btn" title="Eraser">◻</div>
+    <div class="tool-btn" title="Magnify">🔍</div>
+    <div class="tool-btn" title="Brush">🖌️</div>
+    <div class="tool-sep"></div>
+    <div class="tool-btn" title="Spray">💨</div>
+    <div class="tool-btn" title="Line">╱</div>
+    <div class="tool-btn" title="Rectangle">▭</div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-area">
+    <div class="paint-canvas">
+
+      <div class="wizard-wrap" id="wizardWrap">
+        <img class="wizard-img" src="wizard.jpg" alt="The Sidequest Wizard" />
+      </div>
+
+      <h1>Sidequest Wizard</h1>
+      <p class="subtitle">~ Every day holds a hidden quest ~</p>
+
+      <button class="quest-btn" id="questBtn" onclick="rollQuest()">
+        ✦ Reveal My Sidequest ✦
+      </button>
+
+      <div class="quest-card" id="questCard">
+        <div class="quest-category" id="questCat"></div>
+        <div class="quest-text" id="questText"></div>
+        <div class="quest-difficulty" id="questDiff"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Color palette -->
+  <div class="palette-bar">
+    <div class="palette-swatch" style="background:#000000"></div>
+    <div class="palette-swatch" style="background:#808080"></div>
+    <div class="palette-swatch" style="background:#800000"></div>
+    <div class="palette-swatch" style="background:#ff0000"></div>
+    <div class="palette-swatch" style="background:#ff8000"></div>
+    <div class="palette-swatch" style="background:#ffff00"></div>
+    <div class="palette-swatch" style="background:#008000"></div>
+    <div class="palette-swatch" style="background:#00ff00"></div>
+    <div class="palette-swatch" style="background:#008080"></div>
+    <div class="palette-swatch" style="background:#00ffff"></div>
+    <div class="palette-swatch" style="background:#000080"></div>
+    <div class="palette-swatch" style="background:#0000ff"></div>
+    <div class="palette-swatch" style="background:#800080"></div>
+    <div class="palette-swatch" style="background:#ff00ff"></div>
+    <div class="palette-swatch" style="background:#804000"></div>
+    <div class="palette-swatch" style="background:#ff8080"></div>
+    <div class="palette-swatch" style="background:#c0c0c0"></div>
+    <div class="palette-swatch" style="background:#ffffff; border-color:#808080 #fff #fff #808080"></div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-panel" id="statusText">Ready</div>
+    <div class="status-panel" id="statusCoords">0, 0</div>
+    <div class="status-panel">420x420</div>
+  </div>
+
 </div>
-
-<div class="footer">tap the wizard for wisdom</div>
 
 <script>
 const quests = [
@@ -338,67 +513,53 @@ function rollQuest() {
   const card = document.getElementById('questCard');
   const btn = document.getElementById('questBtn');
 
-  // Sparkle burst from button
-  burstSparkles(btn);
+  burstPixels(btn);
 
-  // Brief hide for re-animation
-  card.classList.remove('visible');
+  document.getElementById('statusText').textContent = 'Loading quest...';
+
+  document.getElementById('questCat').textContent = q.cat;
+  document.getElementById('questText').textContent = q.text;
+
+  let pips = 'Difficulty: ';
+  for (let i = 1; i <= 3; i++) {
+    pips += `<span class="pip ${i <= q.diff ? 'active' : ''}"></span>`;
+  }
+  document.getElementById('questDiff').innerHTML = pips;
+
+  card.classList.add('visible');
 
   setTimeout(() => {
-    document.getElementById('questCat').textContent = q.cat;
-    document.getElementById('questText').textContent = q.text;
-
-    // Difficulty pips
-    let pips = '';
-    for (let i = 1; i <= 3; i++) {
-      pips += `<span class="pip ${i <= q.diff ? 'active' : ''}"></span>`;
-    }
-    document.getElementById('questDiff').innerHTML = pips;
-
-    card.classList.add('visible');
-  }, 200);
+    document.getElementById('statusText').textContent = q.cat + ' quest assigned!';
+  }, 300);
 }
 
-function burstSparkles(el) {
+function burstPixels(el) {
   const rect = el.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
+  const colors = ['#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff','#ff8000','#800080'];
 
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 10; i++) {
     const s = document.createElement('div');
-    s.className = 'sparkle';
-    const angle = (Math.PI * 2 * i) / 12 + (Math.random() - 0.5) * 0.4;
-    const dist = 40 + Math.random() * 60;
+    s.className = 'px-spark';
+    s.style.background = colors[Math.floor(Math.random() * colors.length)];
+    const angle = Math.PI * 2 * i / 10 + (Math.random() - 0.5);
+    const dist = 30 + Math.random() * 50;
     s.style.left = cx + 'px';
     s.style.top = cy + 'px';
     s.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
     s.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
-    s.style.width = (3 + Math.random() * 4) + 'px';
-    s.style.height = s.style.width;
     document.body.appendChild(s);
-    setTimeout(() => s.remove(), 700);
+    setTimeout(() => s.remove(), 650);
   }
 }
 
-// Generate stars
-(function genStars() {
-  const container = document.getElementById('stars');
-  for (let i = 0; i < 100; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    s.style.left = Math.random() * 100 + '%';
-    s.style.top = Math.random() * 100 + '%';
-    s.style.setProperty('--dur', (1.5 + Math.random() * 3) + 's');
-    s.style.animationDelay = Math.random() * 3 + 's';
-    s.style.width = s.style.height = (1 + Math.random() * 2) + 'px';
-    container.appendChild(s);
-  }
-})();
-
-// Wizard click easter egg
-document.getElementById('wizardWrap').addEventListener('click', () => {
-  rollQuest();
+// Status bar mouse coords
+document.addEventListener('mousemove', (e) => {
+  document.getElementById('statusCoords').textContent = e.clientX + ', ' + e.clientY;
 });
+
+document.getElementById('wizardWrap').addEventListener('click', rollQuest);
 </script>
 </body>
 </html>
