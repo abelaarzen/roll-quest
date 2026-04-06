@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sidequest Wizard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a12;
+    --card-bg: #12121f;
+    --gold: #d4a843;
+    --gold-dim: #a07830;
+    --purple: #6b3fa0;
+    --purple-glow: #9b6fd0;
+    --text: #e8e0d0;
+    --text-dim: #8a8078;
+    --star: #ffe8a0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Stars background */
+  .stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: var(--star);
+    border-radius: 50%;
+    animation: twinkle var(--dur) ease-in-out infinite alternate;
+  }
+
+  @keyframes twinkle {
+    from { opacity: 0.15; }
+    to { opacity: 0.9; }
+  }
+
+  /* Main container */
+  .container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 520px;
+    width: 100%;
+  }
+
+  /* Wizard icon */
+  .wizard-wrap {
+    position: relative;
+    cursor: default;
+  }
+
+  .wizard-svg {
+    width: 160px;
+    height: 160px;
+    filter: drop-shadow(0 0 30px rgba(107, 63, 160, 0.4));
+    transition: filter 0.4s;
+  }
+
+  .wizard-wrap:hover .wizard-svg {
+    filter: drop-shadow(0 0 50px rgba(155, 111, 208, 0.6));
+  }
+
+  .wizard-glow {
+    position: absolute;
+    inset: -30px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(107,63,160,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Title */
+  h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 900;
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    background: linear-gradient(135deg, var(--gold), var(--star), var(--gold-dim));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+
+  .subtitle {
+    font-size: 1.05rem;
+    color: var(--text-dim);
+    font-style: italic;
+    font-weight: 300;
+    text-align: center;
+    margin-top: -0.8rem;
+  }
+
+  /* The quest button */
+  .quest-btn {
+    position: relative;
+    font-family: 'Cinzel Decorative', serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bg);
+    background: linear-gradient(135deg, var(--gold), var(--star));
+    border: none;
+    padding: 1rem 2.6rem;
+    border-radius: 60px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 25px rgba(212, 168, 67, 0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+    overflow: hidden;
+  }
+
+  .quest-btn::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 62px;
+    background: linear-gradient(135deg, var(--gold), var(--purple-glow), var(--gold));
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .quest-btn:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 40px rgba(212, 168, 67, 0.45), inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+
+  .quest-btn:hover::before { opacity: 1; }
+
+  .quest-btn:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  /* Quest card */
+  .quest-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(212, 168, 67, 0.15);
+    border-radius: 16px;
+    padding: 2rem 2.2rem;
+    width: 100%;
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(212,168,67,0.08);
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .quest-card.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .quest-category {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--purple-glow);
+    margin-bottom: 0.8rem;
+  }
+
+  .quest-text {
+    font-size: 1.35rem;
+    line-height: 1.6;
+    font-weight: 300;
+    color: var(--text);
+  }
+
+  .quest-difficulty {
+    margin-top: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+
+  .quest-difficulty .pip {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gold-dim);
+    opacity: 0.3;
+  }
+
+  .quest-difficulty .pip.active {
+    opacity: 1;
+    background: var(--gold);
+    box-shadow: 0 0 6px rgba(212, 168, 67, 0.5);
+  }
+
+  /* Sparkle burst animation */
+  .sparkle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: var(--star);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: sparkle-fly 0.7s ease-out forwards;
+  }
+
+  @keyframes sparkle-fly {
+    0% { opacity: 1; transform: translate(0, 0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+  }
+
+  /* Orb float animation on wizard */
+  .orb-float {
+    animation: orb-bob 3s ease-in-out infinite;
+  }
+
+  @keyframes orb-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  .footer {
+    position: fixed;
+    bottom: 1.2rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    opacity: 0.5;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="container">
+  <div class="wizard-wrap" id="wizardWrap">
+    <div class="wizard-glow"></div>
+    <svg class="wizard-svg" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+      <!-- Hat -->
+      <polygon points="80,8 55,70 105,70" fill="#3a2066" stroke="#6b3fa0" stroke-width="1.5"/>
+      <polygon points="80,8 55,70 105,70" fill="url(#hatGrad)" opacity="0.5"/>
+      <!-- Hat brim -->
+      <ellipse cx="80" cy="72" rx="38" ry="8" fill="#2a1550" stroke="#6b3fa0" stroke-width="1"/>
+      <!-- Hat stars -->
+      <circle cx="72" cy="38" r="2" fill="#ffe8a0" opacity="0.8"/>
+      <circle cx="88" cy="50" r="1.5" fill="#ffe8a0" opacity="0.6"/>
+      <circle cx="78" cy="55" r="1" fill="#ffe8a0" opacity="0.7"/>
+      <!-- Hat band -->
+      <rect x="58" y="64" width="44" height="6" rx="3" fill="#d4a843" opacity="0.7"/>
+      <!-- Face -->
+      <ellipse cx="80" cy="92" rx="22" ry="20" fill="#e8d8c4"/>
+      <!-- Eyes -->
+      <circle cx="72" cy="88" r="3" fill="#1a1028"/>
+      <circle cx="88" cy="88" r="3" fill="#1a1028"/>
+      <circle cx="73" cy="87" r="1" fill="white" opacity="0.8"/>
+      <circle cx="89" cy="87" r="1" fill="white" opacity="0.8"/>
+      <!-- Eyebrows -->
+      <path d="M67 82 Q72 78 77 82" stroke="#6b5040" stroke-width="1.5" fill="none"/>
+      <path d="M83 82 Q88 78 93 82" stroke="#6b5040" stroke-width="1.5" fill="none"/>
+      <!-- Nose -->
+      <path d="M80 90 Q82 95 80 97" stroke="#c0a888" stroke-width="1.2" fill="none"/>
+      <!-- Beard -->
+      <path d="M62 100 Q65 98 70 100 Q75 108 80 118 Q85 108 90 100 Q95 98 98 100 Q96 112 88 126 Q80 134 72 126 Q64 112 62 100Z" fill="#d8d0c8" stroke="#c0b8b0" stroke-width="0.5"/>
+      <path d="M68 106 Q74 110 80 108" stroke="#c8c0b8" stroke-width="0.5" fill="none" opacity="0.5"/>
+      <path d="M80 108 Q86 110 92 106" stroke="#c8c0b8" stroke-width="0.5" fill="none" opacity="0.5"/>
+      <!-- Robe collar -->
+      <path d="M56 110 Q60 105 68 104" stroke="#4a2880" stroke-width="2" fill="none"/>
+      <path d="M104 110 Q100 105 92 104" stroke="#4a2880" stroke-width="2" fill="none"/>
+      <!-- Staff (right side) -->
+      <line x1="118" y1="50" x2="118" y2="155" stroke="#8b6914" stroke-width="3" stroke-linecap="round"/>
+      <line x1="118" y1="50" x2="118" y2="155" stroke="url(#staffGrad)" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
+      <!-- Orb on staff -->
+      <g class="orb-float">
+        <circle cx="118" cy="44" r="10" fill="url(#orbGrad)"/>
+        <circle cx="118" cy="44" r="10" fill="none" stroke="#9b6fd0" stroke-width="0.5" opacity="0.6"/>
+        <circle cx="115" cy="41" r="3" fill="white" opacity="0.25"/>
+      </g>
+      <!-- Defs -->
+      <defs>
+        <linearGradient id="hatGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#9b6fd0" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#3a2066" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="staffGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#d4a843"/>
+          <stop offset="100%" stop-color="#8b6914"/>
+        </linearGradient>
+        <radialGradient id="orbGrad">
+          <stop offset="0%" stop-color="#d8b0ff"/>
+          <stop offset="50%" stop-color="#9b6fd0"/>
+          <stop offset="100%" stop-color="#6b3fa0"/>
+        </radialGradient>
+      </defs>
+    </svg>
+  </div>
+
+  <h1>Sidequest Wizard</h1>
+  <p class="subtitle">Every day holds a hidden quest</p>
+
+  <button class="quest-btn" id="questBtn" onclick="rollQuest()">
+    ✦ Reveal My Sidequest ✦
+  </button>
+
+  <div class="quest-card" id="questCard">
+    <div class="quest-category" id="questCat"></div>
+    <div class="quest-text" id="questText"></div>
+    <div class="quest-difficulty" id="questDiff"></div>
+  </div>
+</div>
+
+<div class="footer">tap the wizard for wisdom</div>
+
+<script>
+const quests = [
+  // Exploration
+  { cat: "Exploration", text: "Walk to the nearest body of water you've never visited. Sit there for 10 minutes.", diff: 1 },
+  { cat: "Exploration", text: "Find a street in your city you've never been to. Walk the entire length of it.", diff: 1 },
+  { cat: "Exploration", text: "Visit a shop you've walked past a hundred times but never entered.", diff: 1 },
+  { cat: "Exploration", text: "Find the oldest building in your neighborhood. Learn one thing about its history.", diff: 2 },
+  { cat: "Exploration", text: "Take a bus or train to a random stop you've never been to. Explore for an hour.", diff: 2 },
+  { cat: "Exploration", text: "Find the highest publicly accessible point near you. Go see the view.", diff: 2 },
+
+  // Creative
+  { cat: "Creative", text: "Draw a map of your day from memory tonight — every place you went, every turn.", diff: 1 },
+  { cat: "Creative", text: "Write a one-page letter to your future self, one year from now.", diff: 1 },
+  { cat: "Creative", text: "Photograph 5 things that are the same color. Make a collage.", diff: 2 },
+  { cat: "Creative", text: "Learn to fold one origami animal you've never made. Give it to someone.", diff: 2 },
+  { cat: "Creative", text: "Compose a 4-line poem about the last meal you ate.", diff: 1 },
+  { cat: "Creative", text: "Sketch a stranger's shoes from memory after seeing them once.", diff: 2 },
+
+  // Social
+  { cat: "Social", text: "Ask someone older than you for their best piece of life advice.", diff: 1 },
+  { cat: "Social", text: "Send a message to a friend you haven't spoken to in over 6 months.", diff: 1 },
+  { cat: "Social", text: "Compliment a stranger on something specific and genuine.", diff: 2 },
+  { cat: "Social", text: "Have a conversation with someone without looking at your phone once.", diff: 1 },
+  { cat: "Social", text: "Cook a meal for someone else. Don't tell them why.", diff: 2 },
+  { cat: "Social", text: "Learn the name of someone you see regularly but have never spoken to.", diff: 2 },
+
+  // Challenge
+  { cat: "Challenge", text: "Do something with your non-dominant hand for an entire hour.", diff: 2 },
+  { cat: "Challenge", text: "Go an entire day without any screens after 8pm.", diff: 3 },
+  { cat: "Challenge", text: "Take a cold shower. Stay in for 2 minutes.", diff: 2 },
+  { cat: "Challenge", text: "Learn 10 words in a language you don't speak. Use one in a sentence by tonight.", diff: 2 },
+  { cat: "Challenge", text: "Run or walk 5km without music or podcasts. Just you and your thoughts.", diff: 2 },
+  { cat: "Challenge", text: "Sit in complete silence for 20 minutes. No phone, no distractions.", diff: 3 },
+
+  // Craft
+  { cat: "Craft", text: "Fix something small that's been broken for a while. A button, a hinge, a hem.", diff: 1 },
+  { cat: "Craft", text: "Build something useful out of materials you already have at home.", diff: 3 },
+  { cat: "Craft", text: "Sharpen every dull knife in your kitchen. Properly.", diff: 2 },
+  { cat: "Craft", text: "Organize one drawer, shelf, or corner that's been chaotic for too long.", diff: 1 },
+  { cat: "Craft", text: "Learn one knot you don't know. Tie it 20 times until it's muscle memory.", diff: 2 },
+
+  // Culinary
+  { cat: "Culinary", text: "Cook something you've never attempted before. No recipe shortcuts.", diff: 3 },
+  { cat: "Culinary", text: "Visit a grocery store and buy one ingredient you've never used. Cook with it tonight.", diff: 2 },
+  { cat: "Culinary", text: "Eat a meal somewhere you've never eaten before. No looking at reviews first.", diff: 1 },
+  { cat: "Culinary", text: "Make bread from scratch. Just flour, water, salt, yeast, and patience.", diff: 3 },
+  { cat: "Culinary", text: "Drink only water today. Notice how things taste differently.", diff: 2 },
+
+  // Nature
+  { cat: "Nature", text: "Identify three plants or trees near your home. Learn their actual names.", diff: 1 },
+  { cat: "Nature", text: "Watch a sunrise or sunset in full. From start to finish.", diff: 2 },
+  { cat: "Nature", text: "Find and sit under a tree for 30 minutes. Bring nothing.", diff: 1 },
+  { cat: "Nature", text: "Go for a walk in the rain. Don't rush.", diff: 2 },
+  { cat: "Nature", text: "Look at the night sky for 15 minutes. Find one constellation you can name.", diff: 1 },
+];
+
+let lastIndex = -1;
+
+function rollQuest() {
+  let idx;
+  do { idx = Math.floor(Math.random() * quests.length); } while (idx === lastIndex);
+  lastIndex = idx;
+
+  const q = quests[idx];
+  const card = document.getElementById('questCard');
+  const btn = document.getElementById('questBtn');
+
+  // Sparkle burst from button
+  burstSparkles(btn);
+
+  // Brief hide for re-animation
+  card.classList.remove('visible');
+
+  setTimeout(() => {
+    document.getElementById('questCat').textContent = q.cat;
+    document.getElementById('questText').textContent = q.text;
+
+    // Difficulty pips
+    let pips = '';
+    for (let i = 1; i <= 3; i++) {
+      pips += `<span class="pip ${i <= q.diff ? 'active' : ''}"></span>`;
+    }
+    document.getElementById('questDiff').innerHTML = pips;
+
+    card.classList.add('visible');
+  }, 200);
+}
+
+function burstSparkles(el) {
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  for (let i = 0; i < 12; i++) {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    const angle = (Math.PI * 2 * i) / 12 + (Math.random() - 0.5) * 0.4;
+    const dist = 40 + Math.random() * 60;
+    s.style.left = cx + 'px';
+    s.style.top = cy + 'px';
+    s.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+    s.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+    s.style.width = (3 + Math.random() * 4) + 'px';
+    s.style.height = s.style.width;
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 700);
+  }
+}
+
+// Generate stars
+(function genStars() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 100; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.setProperty('--dur', (1.5 + Math.random() * 3) + 's');
+    s.style.animationDelay = Math.random() * 3 + 's';
+    s.style.width = s.style.height = (1 + Math.random() * 2) + 'px';
+    container.appendChild(s);
+  }
+})();
+
+// Wizard click easter egg
+document.getElementById('wizardWrap').addEventListener('click', () => {
+  rollQuest();
+});
+</script>
+</body>
+</html>
