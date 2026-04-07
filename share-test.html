@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Share Test — Sidequest Wizard</title>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a0a2e;
+    font-family: 'Patrick Hand', 'Comic Sans MS', cursive;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    gap: 24px;
+    color: #f0e6ff;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+    color: #c8a0ff;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  .controls {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  label {
+    font-size: 0.85rem;
+    color: #a080cc;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  input, textarea, select {
+    font-family: 'Patrick Hand', 'Comic Sans MS', cursive;
+    font-size: 1rem;
+    background: #2a1248;
+    color: #f0e6ff;
+    border: 2px solid #5a2e8a;
+    padding: 10px 14px;
+    width: 100%;
+    resize: vertical;
+    outline: none;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: #c8a0ff;
+  }
+
+  textarea { min-height: 90px; }
+
+  select option { background: #2a1248; }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  button {
+    font-family: 'Patrick Hand', 'Comic Sans MS', cursive;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    flex: 1;
+    padding: 12px;
+    border: none;
+  }
+
+  #generateBtn {
+    background: linear-gradient(180deg, #ffe066, #ffb800);
+    color: #1a0a2e;
+    border-top: 3px solid #fff9aa;
+    border-left: 3px solid #fff9aa;
+    border-right: 3px solid #7a4800;
+    border-bottom: 3px solid #7a4800;
+  }
+
+  #shareBtn {
+    background: linear-gradient(180deg, #a060ff, #6020cc);
+    color: #fff;
+    border-top: 3px solid #d0a0ff;
+    border-left: 3px solid #d0a0ff;
+    border-right: 3px solid #2a006a;
+    border-bottom: 3px solid #2a006a;
+    display: none;
+  }
+
+  #downloadBtn {
+    background: linear-gradient(180deg, #60c0ff, #2060cc);
+    color: #fff;
+    border-top: 3px solid #a0e0ff;
+    border-left: 3px solid #a0e0ff;
+    border-right: 3px solid #002a6a;
+    border-bottom: 3px solid #002a6a;
+    display: none;
+  }
+
+  .preview-wrap {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .preview-wrap.visible { display: flex; }
+
+  #previewCanvas {
+    width: 260px;
+    height: 462px; /* 9:16 preview */
+    border: 2px solid #5a2e8a;
+    box-shadow: 0 0 30px rgba(180,100,255,0.3);
+  }
+
+  .hint {
+    font-size: 0.8rem;
+    color: #7050a0;
+    text-align: center;
+    max-width: 320px;
+  }
+
+  .share-support {
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border-radius: 0;
+    text-align: center;
+  }
+
+  .share-support.ok  { background: #003a20; color: #40ff90; border: 1px solid #40ff90; }
+  .share-support.no  { background: #3a0000; color: #ff6060; border: 1px solid #ff6060; }
+</style>
+</head>
+<body>
+
+<h1>🧙 Share Card Tester</h1>
+
+<div id="shareStatus" class="share-support"></div>
+
+<div class="controls">
+  <label>Category</label>
+  <select id="catInput">
+    <option>Exploration</option>
+    <option>Creative</option>
+    <option>Social</option>
+    <option>Challenge</option>
+    <option>Wellness</option>
+    <option>Nature</option>
+    <option>Culinary</option>
+    <option>Craft</option>
+    <option>Adventure</option>
+  </select>
+
+  <label>Quest text</label>
+  <textarea id="questInput" placeholder="Type or paste a quest here...">Walk into the first café you pass that you've never been in. Order something small.</textarea>
+
+  <div class="btn-row">
+    <button id="generateBtn" onclick="generate()">✦ Generate Card</button>
+  </div>
+</div>
+
+<div class="preview-wrap" id="previewWrap">
+  <canvas id="previewCanvas" width="1080" height="1920"></canvas>
+
+  <div class="btn-row" style="width:100%;max-width:420px">
+    <button id="shareBtn" onclick="shareCard()">📤 Share to Stories</button>
+    <button id="downloadBtn" onclick="downloadCard()">⬇ Save Image</button>
+  </div>
+
+  <p class="hint">On iPhone/Android the Share button opens your system share sheet — pick Instagram Stories from there.</p>
+</div>
+
+<script>
+// ── Check Web Share API support ──────────────────────────────────────────────
+const statusEl = document.getElementById('shareStatus');
+if (navigator.share && navigator.canShare) {
+  statusEl.textContent = '✓ Web Share API supported — share button will work on this device';
+  statusEl.className = 'share-support ok';
+} else if (navigator.share) {
+  statusEl.textContent = '~ Web Share API partially supported';
+  statusEl.className = 'share-support ok';
+} else {
+  statusEl.textContent = '✗ Web Share API not supported here — use the Download button instead (desktop/unsupported browser)';
+  statusEl.className = 'share-support no';
+}
+
+// ── Card generation ──────────────────────────────────────────────────────────
+const CARD_W = 1080;
+const CARD_H = 1920;
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  let lines = [];
+  for (let w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineHeight));
+  return lines.length;
+}
+
+async function generate() {
+  const quest = document.getElementById('questInput').value.trim();
+  const cat   = document.getElementById('catInput').value;
+  if (!quest) return;
+
+  const canvas = document.getElementById('previewCanvas');
+  const ctx    = canvas.getContext('2d');
+
+  // Background gradient — deep purple/navy
+  const bg = ctx.createLinearGradient(0, 0, 0, CARD_H);
+  bg.addColorStop(0,   '#0d0520');
+  bg.addColorStop(0.5, '#1a0840');
+  bg.addColorStop(1,   '#0a0318');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, CARD_W, CARD_H);
+
+  // Starfield — random dots
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  const seed = cat.length * 7 + quest.length;
+  for (let i = 0; i < 180; i++) {
+    const sx = ((seed * (i * 137 + 11)) % CARD_W + CARD_W) % CARD_W;
+    const sy = ((seed * (i * 97  + 31)) % CARD_H + CARD_H) % CARD_H;
+    const sr = (i % 3 === 0) ? 2.5 : 1.5;
+    ctx.beginPath();
+    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Top decorative rule
+  const ruleGrad = ctx.createLinearGradient(80, 0, CARD_W - 80, 0);
+  ruleGrad.addColorStop(0,   'transparent');
+  ruleGrad.addColorStop(0.5, '#c8a0ff');
+  ruleGrad.addColorStop(1,   'transparent');
+  ctx.strokeStyle = ruleGrad;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(80, 260); ctx.lineTo(CARD_W - 80, 260);
+  ctx.stroke();
+
+  // Wizard emoji — large, centered top area
+  ctx.font = '320px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🧙', CARD_W / 2, 480);
+
+  // "SIDEQUEST WIZARD" brand
+  ctx.font = 'bold 64px Patrick Hand, Comic Sans MS, cursive';
+  ctx.fillStyle = '#c8a0ff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('SIDEQUEST WIZARD', CARD_W / 2, 780);
+
+  // Bottom decorative rule
+  ctx.strokeStyle = ruleGrad;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(80, 820); ctx.lineTo(CARD_W - 80, 820);
+  ctx.stroke();
+
+  // Quest card box
+  const boxX = 80, boxY = 900, boxW = CARD_W - 160, boxH = 700;
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.fillRect(boxX, boxY, boxW, boxH);
+  // bevel
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(boxX, boxY + boxH); ctx.lineTo(boxX, boxY); ctx.lineTo(boxX + boxW, boxY);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.moveTo(boxX + boxW, boxY); ctx.lineTo(boxX + boxW, boxY + boxH); ctx.lineTo(boxX, boxY + boxH);
+  ctx.stroke();
+
+  // Category badge
+  ctx.fillStyle = '#000080';
+  ctx.fillRect(boxX + 30, boxY + 36, 280, 60);
+  ctx.font = 'bold 42px Patrick Hand, Comic Sans MS, cursive';
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'left';
+  ctx.fillText(cat.toUpperCase(), boxX + 50, boxY + 78);
+
+  // Quest text
+  ctx.font = '58px Patrick Hand, Comic Sans MS, cursive';
+  ctx.fillStyle = '#f0e6ff';
+  ctx.textAlign = 'left';
+  wrapText(ctx, quest, boxX + 30, boxY + 160, boxW - 60, 80);
+
+  // Gold divider line
+  const goldGrad = ctx.createLinearGradient(boxX + 30, 0, boxX + boxW - 30, 0);
+  goldGrad.addColorStop(0, 'transparent');
+  goldGrad.addColorStop(0.5, '#ffb800');
+  goldGrad.addColorStop(1, 'transparent');
+  ctx.strokeStyle = goldGrad;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(boxX + 30, boxY + boxH - 80);
+  ctx.lineTo(boxX + boxW - 30, boxY + boxH - 80);
+  ctx.stroke();
+
+  // roll.quest watermark
+  ctx.font = 'bold 44px Patrick Hand, Comic Sans MS, cursive';
+  ctx.fillStyle = 'rgba(200,160,255,0.7)';
+  ctx.textAlign = 'center';
+  ctx.fillText('roll.quest', CARD_W / 2, boxY + boxH - 24);
+
+  // Bottom tagline
+  ctx.font = '50px Patrick Hand, Comic Sans MS, cursive';
+  ctx.fillStyle = 'rgba(160,120,220,0.8)';
+  ctx.fillText('~ What will you do today? ~', CARD_W / 2, 1720);
+
+  // Bottom rule
+  ctx.strokeStyle = ruleGrad;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(80, 1760); ctx.lineTo(CARD_W - 80, 1760);
+  ctx.stroke();
+
+  // Show preview + buttons
+  document.getElementById('previewWrap').classList.add('visible');
+  document.getElementById('downloadBtn').style.display = 'block';
+  if (navigator.share) {
+    document.getElementById('shareBtn').style.display = 'block';
+  }
+}
+
+// ── Share ────────────────────────────────────────────────────────────────────
+async function shareCard() {
+  const canvas = document.getElementById('previewCanvas');
+  canvas.toBlob(async (blob) => {
+    const file = new File([blob], 'my-sidequest.png', { type: 'image/png' });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'My Sidequest',
+          text: 'Check out my sidequest from roll.quest 🧙',
+        });
+      } else {
+        // Fallback: share without file (link + text only)
+        await navigator.share({
+          title: 'My Sidequest',
+          text: 'Check out my sidequest from roll.quest 🧙',
+          url: 'https://roll.quest',
+        });
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') alert('Share failed: ' + e.message);
+    }
+  }, 'image/png');
+}
+
+// ── Download ─────────────────────────────────────────────────────────────────
+function downloadCard() {
+  const canvas = document.getElementById('previewCanvas');
+  const a = document.createElement('a');
+  a.download = 'my-sidequest.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+</script>
+</body>
+</html>
